@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TOEIC Part 7 Practice</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght=700;900&family=Source+Serif+4:ital,wght=0,300;0,400;0,600;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1208;
+    --paper: #f7f3ec;
+    --cream: #ede8df;
+    --gold: #c8922a;
+    --rust: #b94a2c;
+    --sage: #4a6741;
+    --muted: #7a6e62;
+    --border: #d4cdc3;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Source Serif 4', Georgia, serif;
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  /* Header */
+  .header {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 18px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+    letter-spacing: 0.04em;
+  }
+  .header .sub {
+    font-size: 0.72rem;
+    color: var(--gold);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+  .score-badge {
+    background: var(--gold);
+    color: var(--ink);
+    font-family: 'Playfair Display', serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    padding: 6px 14px;
+    border-radius: 2px;
+  }
+
+  /* Main Layout */
+  .container { max-width: 780px; margin: 0 auto; padding: 24px 16px 60px; }
+
+  /* Topic selector */
+  .topic-bar {
+    display: flex; gap: 8px; flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  .topic-btn {
+    font-family: 'Source Serif 4', serif;
+    font-size: 0.78rem;
+    padding: 6px 14px;
+    border: 1.5px solid var(--border);
+    background: var(--cream);
+    color: var(--muted);
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.2s;
+    letter-spacing: 0.02em;
+  }
+  .topic-btn:hover, .topic-btn.active {
+    background: var(--ink);
+    color: var(--paper);
+    border-color: var(--ink);
+  }
+
+  /* Generate button */
+  .gen-btn {
+    width: 100%;
+    padding: 14px;
+    background: var(--rust);
+    color: #fff;
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem;
+    letter-spacing: 0.06em;
+    border: none;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: background 0.2s;
+    margin-bottom: 28px;
+  }
+  .gen-btn:hover { background: #9e3e24; }
+  .gen-btn:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; }
+
+  /* Loading */
+  .loading {
+    text-align: center;
+    padding: 48px 0;
+    color: var(--muted);
+    font-style: italic;
+    display: none;
+  }
+  .dots span {
+    display: inline-block;
+    animation: blink 1.2s infinite;
+    font-size: 1.5rem;
+    color: var(--gold);
+  }
+  .dots span:nth-child(2) { animation-delay: 0.2s; }
+  .dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes blink { 0%,80%,100%{opacity:0} 40%{opacity:1} }
+
+  /* Passage card */
+  .passage-card {
+    background: #fff;
+    border: 1.5px solid var(--border);
+    border-top: 4px solid var(--gold);
+    padding: 24px 22px;
+    margin-bottom: 24px;
+    display: none;
+  }
+  .passage-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--gold);
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .passage-type {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-bottom: 16px;
+    font-style: italic;
+  }
+  .passage-text {
+    font-size: 0.95rem;
+    line-height: 1.85;
+    color: var(--ink);
+    border-left: 3px solid var(--cream);
+    padding-left: 16px;
+    white-space: pre-line;
+  }
+
+  /* Questions */
+  .questions-wrap { display: none; }
+  .q-card {
+    background: var(--cream);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 18px 18px 14px;
+    margin-bottom: 16px;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.3s, transform 0.3s;
+  }
+  .q-card.visible { opacity: 1; transform: translateY(0); }
+  .q-num {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .q-text {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 14px;
+    line-height: 1.5;
+  }
+  .options { display: flex; flex-direction: column; gap: 8px; }
+  .opt-btn {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 10px 14px;
+    background: #fff;
+    border: 1.5px solid var(--border);
+    border-radius: 2px;
+    cursor: pointer;
+    font-family: 'Source Serif 4', serif;
+    font-size: 0.88rem;
+    color: var(--ink);
+    text-align: left;
+    transition: all 0.15s;
+    width: 100%;
+  }
+  .opt-btn:hover:not(:disabled) { border-color: var(--gold); background: #fdf9f3; }
+  .opt-btn .letter {
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+    color: var(--gold);
+    min-width: 18px;
+    font-size: 0.9rem;
+  }
+  .opt-btn.correct { background: #edf5eb; border-color: var(--sage); color: var(--sage); }
+  .opt-btn.wrong { background: #fdf0ee; border-color: var(--rust); color: var(--rust); }
+  .opt-btn.correct .letter { color: var(--sage); }
+  .opt-btn.wrong .letter { color: var(--rust); }
+  .explanation {
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: #fff8ee;
+    border-left: 3px solid var(--gold);
+    font-size: 0.83rem;
+    color: var(--ink);
+    line-height: 1.6;
+    display: none;
+  }
+  .explanation.show { display: block; }
+  .mmr-note {
+    font-style: italic;
+    color: var(--muted);
+    font-size: 0.8rem;
+    margin-top: 4px;
+    display: block;
+  }
+
+  /* Result bar */
+  .result-bar {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 16px 20px;
+    border-radius: 2px;
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 8px;
+    margin-bottom: 28px;
+  }
+  .result-bar .r-label { font-size: 0.8rem; color: var(--gold); text-transform: uppercase; letter-spacing: 0.1em; }
+  .result-bar .r-score { font-family: 'Playfair Display', serif; font-size: 1.6rem; }
+  .result-bar .r-msg { font-size: 0.85rem; font-style: italic; color: #d0c9be; }
+
+  .try-again {
+    display: none;
+    width: 100%;
+    padding: 12px;
+    background: var(--sage);
+    color: #fff;
+    font-family: 'Playfair Display', serif;
+    font-size: 0.95rem;
+    letter-spacing: 0.05em;
+    border: none;
+    cursor: pointer;
+    border-radius: 2px;
+    margin-top: 12px;
+    transition: background 0.2s;
+  }
+  .try-again:hover { background: #3a5432; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>TOEIC Part 7</h1>
+    <div class="sub">Reading Comprehension Practice</div>
+  </div>
+  <div class="score-badge" id="scoreDisplay">Score: 0/0</div>
+</div>
+
+<div class="container">
+
+  <div class="topic-bar" id="topicBar">
+    <button class="topic-btn active" data-topic="business email">Business Email</button>
+    <button class="topic-btn" data-topic="advertisement">Advertisement</button>
+    <button class="topic-btn" data-topic="office memo">Office Memo</button>
+    <button class="topic-btn" data-topic="news article">News Article</button>
+    <button class="topic-btn" data-topic="letter">Formal Letter</button>
+    <button class="topic-btn" data-topic="notice">Notice/Announcement</button>
+    <button class="topic-btn" data-topic="random">🎲 Random</button>
+  </div>
+
+  <button class="gen-btn" id="genBtn" onclick="generatePassage()">
+    Generate New Passage + Questions
+  </button>
+
+  <div class="loading" id="loading">
+    <div class="dots"><span>●</span><span>●</span><span>●</span></div>
+    <p style="margin-top:12px;font-size:0.9rem">Generating passage…</p>
+  </div>
+
+  <div class="passage-card" id="passageCard">
+    <div class="passage-label">Reading Passage</div>
+    <div class="passage-type" id="passageType"></div>
+    <div class="passage-text" id="passageText"></div>
+  </div>
+
+  <div class="questions-wrap" id="questionsWrap"></div>
+
+  <div class="result-bar" id="resultBar">
+    <div>
+      <div class="r-label">Your Score</div>
+      <div class="r-score" id="resultScore"></div>
+    </div>
+    <div class="r-msg" id="resultMsg"></div>
+  </div>
+
+  <button class="try-again" id="tryAgain" onclick="generatePassage()">Try Another Passage →</button>
+</div>
+
+<script>
+let selectedTopic = 'business email';
+let totalScore = 0, totalAnswered = 0;
+let sessionCorrect = 0, sessionTotal = 0;
+let answered = {};
+let currentQuestions = [];
+
+// Fully Fixed Database supporting all tabs
+const mockDatabase = {
+  "business email": {
+    "type": "Business Email",
+    "passage": "To: All Staff\nFrom: HR Department\nDate: October 12\nSubject: Mandatory Security Update\n\nPlease be advised that our IT department will be conducting a critical system maintenance this Friday at 6:00 PM. During this time, access to the internal network, company email, and shared drives will be completely unavailable. The maintenance is expected to last for approximately four hours. We strongly request all employees to save their files and log off from their computers before leaving the office on Friday afternoon to avoid any potential data loss.",
+    "questions": [
+      {
+        "q": "What is the main purpose of the email?",
+        "options": ["A. To announce a new HR policy", "B. To inform staff about upcoming network maintenance", "C. To recruit volunteers for the IT department", "D. To schedule a company holiday"],
+        "answer": "B",
+        "explanation": "The email clearly states that IT will conduct a critical system maintenance on Friday.",
+        "myanmar": "မေးခွန်းက အဓိကရည်ရွယ်ချက်ကိုမေးတာဖြစ်ပြီး Network ပြုပြင်ထိန်းသိမ်းမှုရှိကြောင်း အသိပေးတာဖြစ်လို့ B က အမှန်ပါ။"
+      },
+      {
+        "q": "When will the system maintenance begin?",
+        "options": ["A. Friday morning", "B. Friday at 6:00 PM", "C. Saturday night", "D. Monday morning"],
+        "answer": "B",
+        "explanation": "The passage states the maintenance will happen 'this Friday at 6:00 PM'.",
+        "myanmar": "စာပိုဒ်ထဲမှာ သောကြာနေ့ ညနေ ၆ နာရီမှာ စတင်မယ်လို့ အတိအလင်းပြထားပါတယ်။"
+      }
+    ]
+  },
+  "advertisement": {
+    "type": "Advertisement",
+    "passage": "Looking to boost your career? Apex Language Institute offers premium professional English courses designed specifically for corporate employees. Our flexible weekend and evening classes fit perfectly into your busy schedules. Register before November 1st to receive a 15% early-bird discount on tuition fees. Visit our campus or check our website to take a free level placement test today!",
+    "questions": [
+      {
+        "q": "Who is this advertisement most likely targeting?",
+        "options": ["A. High school students", "B. Retired citizens", "C. Working professionals", "D. Tourists"],
+        "answer": "C",
+        "explanation": "The ad mentions courses 'designed specifically for corporate employees' and flexible hours for 'busy schedules'.",
+        "myanmar": "ကုမ္ပဏီဝန်ထမ်းတွေအတွက် ရည်ရွယ်တယ်လို့ ပါရှိတဲ့အတွက် အလုပ်လုပ်နေသူတွေ (Working professionals) ကို ဆိုလိုတာပါ။"
+      },
+      {
+        "q": "How can customers get a tuition discount?",
+        "options": ["A. By bringing a friend", "B. By signing up before November 1st", "C. By passing the top level test", "D. By paying with cash"],
+        "answer": "B",
+        "explanation": "The ad states: 'Register before November 1st to receive a 15% early-bird discount'.",
+        "myanmar": "နိုဝင်ဘာ ၁ ရက်မတိုင်ခင် စာရင်းသွင်းရင် Early-bird discount ရမယ်လို့ ဖော်ပြထားပါတယ်။"
+      }
+    ]
+  },
+  "office memo": {
+    "type": "Office Memo",
+    "passage": "MEMORANDUM\nTo: Marketing Team\nFrom: Project Manager\nSubject: Deadline Extension for Green Project\n\nDue to unexpected delays in receiving the final market research report from our external consultants, the submission deadline for the Green Project proposal has been extended from October 15 to October 22. Please use this extra week to refine the financial estimates and proofread the design concepts. We will hold a brief check-in meeting this Thursday at 10 AM to review your progress.",
+    "questions": [
+      {
+        "q": "Why was the deadline extended?",
+        "options": ["A. The budget was cut.", "B. A consultant report was delayed.", "C. The team requested more holidays.", "D. The office is moving."],
+        "answer": "B",
+        "explanation": "The memo attributes the delay to 'unexpected delays in receiving the final market research report from our external consultants'.",
+        "myanmar": "ပြင်ပအတိုင်ပင်ခံတွေဆီက စျေးကွက်သုတေသနအစီရင်ခံစာ မရသေးလို့ ရက်ရွှေ့ရတာ ဖြစ်ပါတယ်။"
+      }
+    ]
+  },
+  "news article": {
+    "type": "News Article",
+    "passage": "VENTURA — TechGiant Corp. announced yesterday its plan to build a new regional distribution center in the industrial zone of Ventura city. The 45-million-dollar project is expected to create over 300 full-time jobs upon its completion late next year. Mayor Linda Ross welcomed the announcement, stating that the facility will provide a significant economic boost to the local community. Construction is scheduled to begin early next month.",
+    "questions": [
+      {
+        "q": "What is the article mainly about?",
+        "options": ["A. A business merger", "B. A new construction plan", "C. A change in local leadership", "D. Financial losses at TechGiant Corp."],
+        "answer": "B",
+        "explanation": "The article describes TechGiant's plan to construct a new distribution center.",
+        "myanmar": "TechGiant ကုမ္ပဏီက ဖြန့်ချိရေးစင်တာအသစ် ဆောက်လုပ်မယ့်အကြောင်း သတင်းဖြစ်လို့ B က အမှန်ပါ။"
+      }
+    ]
+  },
+  "letter": {
+    "type": "Formal Letter",
+    "passage": "Dear Mr. Davies,\n\nThank you for submitting your application for the Senior Software Engineer position at NexaTech Solutions. We appreciated the opportunity to review your impressive credentials and learn more about your professional background.\n\nWhile your qualifications are highly commendable, we have selected another candidate whose experience aligns more closely with the specific technical requirements of this role. We will keep your resume on file for future opportunities.\n\nSincerely,\nHR Team",
+    "questions": [
+      {
+        "q": "What is the purpose of this letter?",
+        "options": ["A. To offer a job", "B. To reject an application", "C. To request a reference letter", "D. To schedule an interview"],
+        "answer": "B",
+        "explanation": "The letter states that they have selected another candidate for the position.",
+        "myanmar": "အခြားလျှောက်ထားသူကို ရွေးချယ်လိုက်ပြီဖြစ်ကြောင်း အကြောင်းကြားတဲ့ ငြင်းပယ်စာ (Reject letter) ဖြစ်ပါတယ်။"
+      }
+    ]
+  },
+  "notice": {
+    "type": "Notice / Announcement",
+    "passage": "PUBLIC NOTICE: ELEVATOR RENEWAL\n\nPlease note that the main elevators in the West Wing will be undergoing a complete mechanical overhaul starting Monday, June 5. The work will continue through Friday, June 9. During this period, both elevators will be completely offline. Occupants are advised to use the service elevator located near the loading dock or use the emergency stairwells. We apologize for any temporary inconvenience this major facility upgrade may cause.",
+    "questions": [
+      {
+        "q": "How long will the elevator work take?",
+        "options": ["A. Two days", "B. Five days", "C. One week", "D. A whole month"],
+        "answer": "B",
+        "explanation": "The notice states the work starts on Monday, June 5 and continues through Friday, June 9, which is 5 days.",
+        "myanmar": "တနင်္လာနေ့မှ သောကြာနေ့အထိ ကြာမြင့်မည်ဟု ပါရှိသောကြောင့် စုစုပေါင်း ၅ ရက် (Five days) ကြာမှာဖြစ်ပါတယ်။"
+      }
+    ]
+  }
+};
+
+// Fixed Topic Button Listener to correctly set selectedTopic
+document.querySelectorAll('.topic-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.topic-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedTopic = btn.dataset.topic; // This line updates the selected topic variable correctly
+  });
+});
+
+async function generatePassage() {
+  const btn = document.getElementById('genBtn');
+  btn.disabled = true;
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('passageCard').style.display = 'none';
+  document.getElementById('questionsWrap').style.display = 'none';
+  document.getElementById('resultBar').style.display = 'none';
+  document.getElementById('tryAgain').style.display = 'none';
+
+  answered = {};
+  sessionCorrect = 0;
+  sessionTotal = 0;
+
+  let topic = selectedTopic;
+  if (topic === 'random') {
+    const topics = ["business email", "advertisement", "office memo", "news article", "letter", "notice"];
+    topic = topics[Math.floor(Math.random() * topics.length)];
+  }
+
+  try {
+    const response = await fetch('/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ topic })
+    });
+    const data = await response.json();
+    renderPassage(data);
+  } catch (err) {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('genBtn').disabled = false;
+    alert('Generate မအောင်မြင်ပါ၊ ထပ်စမ်းကြည့်ပါ။');
+  }
+}
+
+function renderPassage(data) {
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('passageType').textContent = data.type.toUpperCase();
+  document.getElementById('passageText').textContent = data.passage;
+  document.getElementById('passageCard').style.display = 'block';
+
+  const wrap = document.getElementById('questionsWrap');
+  wrap.innerHTML = '';
+  wrap.style.display = 'block';
+  
+  currentQuestions = data.questions;
+
+  data.questions.forEach((q, qi) => {
+    const card = document.createElement('div');
+    card.className = 'q-card';
+    card.id = `q${qi}`;
+
+    const letters = ['A','B','C','D'];
+    const optsHtml = q.options.map((opt, oi) => `
+      <button class="opt-btn" onclick="checkAnswer(${qi}, '${letters[oi]}', this)" id="opt_${qi}_${oi}">
+        <span class="letter">${letters[oi]}</span>
+        <span>${opt.replace(/^[A-D]\.\s*/,'')}</span>
+      </button>
+    `).join('');
+
+    card.innerHTML = `
+      <div class="q-num">Question ${qi + 1}</div>
+      <div class="q-text">${q.q}</div>
+      <div class="options">${optsHtml}</div>
+      <div class="explanation" id="exp${qi}"></div>
+    `;
+    wrap.appendChild(card);
+
+    setTimeout(() => card.classList.add('visible'), 80 * qi);
+  });
+
+  document.getElementById('genBtn').disabled = false;
+}
+
+function checkAnswer(qi, chosen, btn) {
+  if (answered[qi]) return;
+  answered[qi] = true;
+  sessionTotal++;
+
+  const q = currentQuestions[qi];
+  const correct = q.answer;
+  const card = document.getElementById(`q${qi}`);
+  
+  card.querySelectorAll('.opt-btn').forEach(b => b.disabled = true);
+
+  const letters = ['A','B','C','D'];
+  const btns = card.querySelectorAll('.opt-btn');
+  
+  btns.forEach((b, i) => {
+    if (letters[i] === correct) b.classList.add('correct');
+  });
+
+  if (chosen !== correct) {
+    btn.classList.add('wrong');
+  } else {
+    sessionCorrect++;
+    totalScore++;
+  }
+  totalAnswered++;
+
+  const exp = document.getElementById(`exp${qi}`);
+  exp.innerHTML = `<strong>✓ Correct answer: ${correct}</strong><br>${q.explanation}<br><span class="mmr-note">💡 ${q.myanmar}</span>`;
+  exp.classList.add('show');
+
+  document.getElementById('scoreDisplay').textContent = `Score: ${totalScore}/${totalAnswered}`;
+
+  if (Object.keys(answered).length === currentQuestions.length) {
+    showResult();
+  }
+}
+
+function showResult() {
+  const bar = document.getElementById('resultBar');
+  bar.style.display = 'flex';
+  const pct = Math.round((sessionCorrect / sessionTotal) * 100);
+  document.getElementById('resultScore').textContent = `${sessionCorrect} / ${sessionTotal}`;
+  const msgs = {
+    100: "Perfect! Outstanding work 🎉",
+    75: "Great job! Keep it up 💪",
+    50: "Good effort. Review & retry!",
+    0: "Keep practicing — you've got this!"
+  };
+  const key = pct === 100 ? 100 : pct >= 75 ? 75 : pct >= 50 ? 50 : 0;
+  document.getElementById('resultMsg').textContent = msgs[key];
+  document.getElementById('tryAgain').style.display = 'block';
+}
+</script>
+</body>
+</html>
